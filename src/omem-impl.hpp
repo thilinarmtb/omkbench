@@ -13,13 +13,12 @@ extern "C" {
 #endif
 
 struct omem {
-  /* occa related */
+  // occa device and json object to store configurations.
   occa::device device;
   occa::json props;
-  /* User input */
-  int device_id;
-  int start, end, trials;
-  int verbose;
+  // User input parameters.
+  int start, threshold, end, am_inc, trials, verbose;
+  double gm_inc;
 };
 
 // Host memory allocation function.

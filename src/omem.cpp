@@ -7,11 +7,15 @@
 static void print_help() {
   printf("Usage: %s [OPTIONS]\n");
   printf("Options:\n");
-  printf("  --device_id <ID>, Values: 0, 1, 2, ... \n");
-  printf("  --backend <BACKEND>, Values: Cuda, OpenCL, etc.\n");
-  printf("  --start <START>, Values: 1, 2, ... \n");
-  printf("  --end <END>, Values: 1, 2, ... \n");
-  printf("  --inc <END>, Values: 1, 2, ... \n");
+  printf("  --device_id <ID>, Device id, Values: 0, 1, 2, ... \n");
+  printf("  --backend <BACKEND>, Backend name, Values: Cuda, OpenCL, etc.\n");
+  printf("  --start=<START>, Start array size, Values: 1, 2, ... \n");
+  printf("  --threshold=<THRESHOLD>, AM to GM switching threshold, Values: 1, "
+         "2, ... \n");
+  printf("  --end=<END>, End array size, Values: 1, 2, ... \n");
+  printf("  --am_inc=<DISTANCE>, AM distance, Values: 1, 2, ... \n");
+  printf("  --gm_inc=<RATIO>, GM ratio, Values: 0.1, 0.15, ... \n");
+  printf("  --trials=<TRIALS>, Number of trials, Values: 1, 2, ...\n");
   printf("  --verbose=<VERBOSITY>, Values: 0, 1, 2, ...\n");
   printf("  --help\n");
 }
@@ -21,21 +25,23 @@ struct omem *omem_init(int argc, char *argv[]) {
       {"device_id", required_argument, 0, 10},
       {"backend", required_argument, 0, 20},
       {"start", optional_argument, 0, 30},
-      {"end", optional_argument, 0, 40},
-      {"inc", optional_argument, 0, 50},
-      {"trials", optional_argument, 0, 60},
-      {"verbose", optional_argument, 0, 60},
+      {"threshold", optional_argument, 0, 31},
+      {"end", optional_argument, 0, 32},
+      {"am_inc", optional_argument, 0, 33},
+      {"gm_inc", optional_argument, 0, 34},
+      {"trials", optional_argument, 0, 40},
+      {"verbose", optional_argument, 0, 50},
       {"help", no_argument, 0, 99},
       {0, 0, 0, 0}};
 
   struct omem *omem = new struct omem();
-  omem->device_id = omem->verbose = 0;
-  omem->trials = 100;
-  omem->start = 1, omem->end = 1e6;
-  char *backend = NULL;
+  omem->start = 1, omem->threshold = 1000, omem->end = 1e6;
+  omem->am_inc = 1, omem->gm_inc = 1.03;
+  omem->trials = 100, omem->verbose = 0;
 
   // Parse the command line arguments.
-  char bfr[BUFSIZ];
+  char *backend = NULL;
+  int device_id = 0;
   for (;;) {
     int c = getopt_long(argc, argv, "", long_options, NULL);
     if (c == -1)
@@ -43,7 +49,7 @@ struct omem *omem_init(int argc, char *argv[]) {
 
     switch (c) {
     case 10:
-      omem->device_id = atoi(optarg);
+      device_id = atoi(optarg);
       break;
     case 20:
       backend = strndup(optarg, BUFSIZ);
@@ -51,10 +57,22 @@ struct omem *omem_init(int argc, char *argv[]) {
     case 30:
       omem->start = atoi(optarg);
       break;
-    case 40:
+    case 31:
+      omem->threshold = atoi(optarg);
+      break;
+    case 32:
       omem->end = atoi(optarg);
       break;
-    case 60:
+    case 33:
+      omem->am_inc = atoi(optarg);
+      break;
+    case 34:
+      omem->gm_inc = atof(optarg);
+      break;
+    case 40:
+      omem->trials = atoi(optarg);
+      break;
+    case 50:
       omem->verbose = atoi(optarg);
       break;
     case 99:
@@ -72,7 +90,7 @@ struct omem *omem_init(int argc, char *argv[]) {
     errx(EXIT_FAILURE, "Backend was not provided. Try `--help`.");
 
   omem->device.setup(
-      {{"mode", std::string(backend)}, {"device_id", omem->device_id}});
+      {{"mode", std::string(backend)}, {"device_id", device_id}});
   omem_free(&backend);
 
   return omem;
@@ -89,10 +107,10 @@ void omem_bench(const char *filename, struct omem *omem) {
 
   unsigned trials = omem->trials;
   for (unsigned i = omem->start; i < omem->end;) {
-    // Allocate memory on the device
+    // Allocate memory on the device.
     occa::memory o_a = omem->device.malloc<double>(i);
 
-    // Warmup
+    // Warmup.
     for (unsigned j = 0; j < trials; j++)
       o_a.copyFrom(a);
     clock_t st = clock();
@@ -101,7 +119,7 @@ void omem_bench(const char *filename, struct omem *omem) {
     clock_t et = clock();
     double h2d = (double)(et - st) / (trials * CLOCKS_PER_SEC);
 
-    // Warmup
+    // Time the data copy.
     for (unsigned j = 0; j < trials; j++)
       o_a.copyTo(a);
     st = clock();
@@ -112,10 +130,10 @@ void omem_bench(const char *filename, struct omem *omem) {
 
     fprintf(fp, "%d,%e,%e\n", i, h2d, d2h);
     o_a.free();
-    if (i < 1000)
-      i++;
+    if (i < omem->threshold)
+      i += omem->am_inc;
     else
-      i = (unsigned)(1.02 * i);
+      i = (unsigned)(omem->gm_inc * i);
   }
   fclose(fp);
 
