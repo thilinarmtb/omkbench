@@ -1,11 +1,11 @@
 #!/bin/bash
 
 : ${PROJ_ID:="CSC262"}
+: ${OMEM_INSTALL_DIR:=./install}
 : ${QUEUE:="batch"}
 
 if [ $# -ne 3 ]; then
-  echo "Usage: [PROJ_ID=value] [CPUONLY=value] $0 <backend> <number of compute \
-nodes> <hh:mm:ss>"
+  echo "Usage: [PROJ_ID=value] $0 <backend> <# compute nodes> <hh:mm:ss>"
   exit 0
 fi
 
@@ -13,7 +13,7 @@ backend=$1
 nodes=$2
 time=$3
 
-bin=./install/bin/driver
+bin=${OMEM_INSTALL_DIR}/bin/driver
 gpu_per_node=1
 core_per_node=1
 let nn=$nodes*$gpu_per_node
