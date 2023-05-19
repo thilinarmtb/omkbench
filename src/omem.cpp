@@ -73,7 +73,7 @@ struct omem *omem_init(int argc, char *argv[]) {
 
   omem->device.setup(
       {{"mode", std::string(backend)}, {"device_id", omem->device_id}});
-  omem_free(char, &backend);
+  omem_free(&backend);
 
   return omem;
 }
@@ -119,7 +119,7 @@ void omem_bench(const char *filename, struct omem *omem) {
   }
   fclose(fp);
 
-  omem_free(double, &a);
+  omem_free(&a);
 }
 
 void omem_finalize(struct omem **omem) {

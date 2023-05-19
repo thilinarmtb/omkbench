@@ -22,17 +22,16 @@ struct omem {
   int verbose;
 };
 
-/* Memory allocation functions */
+// Host memory allocation function.
 #define omem_calloc(T, n) (T *)calloc(n, sizeof(T))
-// FiXME: Call a function instead of the inline macro.
-#define omem_free(T, p)                                                        \
-  {                                                                            \
-    T *p_ = *p;                                                                \
-    if (p_) {                                                                  \
-      free(p_);                                                                \
-      p_ = NULL;                                                               \
-    }                                                                          \
-  }
+
+// Host memory free function.
+static inline int omem_free_(void **p) {
+  free(*p), *p = NULL;
+  return 0;
+}
+
+#define omem_free(p) omem_free_((void **)p);
 
 #ifdef __cplusplus
 }
