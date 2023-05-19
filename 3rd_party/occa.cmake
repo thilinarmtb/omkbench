@@ -1,8 +1,8 @@
 include(FetchContent)
 
 FetchContent_Declare(occa_content
-  GIT_REPOSITORY https://github.com/thilinarmtb/occa.git
-  GIT_TAG replace_cmake_source_dir
+  GIT_REPOSITORY https://github.com/libocca/occa.git
+  GIT_TAG development
 )
 
 FetchContent_GetProperties(occa_content)
