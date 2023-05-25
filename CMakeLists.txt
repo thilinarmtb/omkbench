@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(3rd_party/occa.cmake)
 
-set(SOURCES src/omk.cpp)
+set(SOURCES src/omk.cpp src/omk-bench.cpp)
 
 add_library(omk SHARED ${SOURCES})
 set_target_properties(omk PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1
@@ -40,6 +40,7 @@ if (CLANG_FORMAT)
     COMMENT "Running clang-format ...")
 endif()
 
+install(DIRECTORY okl/ DESTINATION okl FILES_MATCHING REGEX "\.okl$|\.c|\.h$|\.hpp$|")
 install(TARGETS omk driver RUNTIME DESTINATION bin LIBRARY DESTINATION lib
   PUBLIC_HEADER DESTINATION include
 )

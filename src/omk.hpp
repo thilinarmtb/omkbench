@@ -7,7 +7,7 @@ extern "C" {
 
 struct omk;
 struct omk *omk_init(int argc, char *argv[]);
-void omk_bench(const char *filename, struct omk *omk);
+void omk_bench(struct omk *omk);
 void omk_finalize(struct omk **omk);
 
 #ifdef __cplusplus

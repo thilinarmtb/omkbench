@@ -1,11 +1,12 @@
 #include "omk-impl.hpp"
 #include <err.h>
 #include <getopt.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <string.h>
 
-static void print_help() {
-  printf("Usage: %s [OPTIONS]\n");
+static void print_help(const char *name) {
+  printf("Usage: %s [OPTIONS]\n", name);
   printf("Options:\n");
   printf("  --device_id <ID>, Device id, Values: 0, 1, 2, ... \n");
   printf("  --backend <BACKEND>, Backend name, Values: Cuda, OpenCL, etc.\n");
@@ -17,6 +18,7 @@ static void print_help() {
   printf("  --gm_inc=<RATIO>, GM ratio, Values: 0.1, 0.15, ... \n");
   printf("  --trials=<TRIALS>, Number of trials, Values: 1, 2, ...\n");
   printf("  --verbose=<VERBOSITY>, Values: 0, 1, 2, ...\n");
+  printf("  --prefix=<PREFIX>, Prefix for the result files.\n");
   printf("  --help\n");
 }
 
@@ -31,13 +33,17 @@ struct omk *omk_init(int argc, char *argv[]) {
       {"gm_inc", optional_argument, 0, 34},
       {"trials", optional_argument, 0, 40},
       {"verbose", optional_argument, 0, 50},
+      {"prefix", optional_argument, 0, 60},
+      {"install_dir", optional_argument, 0, 70},
       {"help", no_argument, 0, 99},
       {0, 0, 0, 0}};
 
   struct omk *omk = new struct omk();
   omk->start = 1, omk->threshold = 1000, omk->end = 1e6;
   omk->am_inc = 1, omk->gm_inc = 1.03;
-  omk->trials = 100, omk->verbose = 0;
+  strncpy(omk->prefix, "omk", 8);
+  omk->trials = 500, omk->verbose = 0;
+  omk->install_dir = NULL;
 
   // Parse the command line arguments.
   char *backend = NULL;
@@ -75,11 +81,17 @@ struct omk *omk_init(int argc, char *argv[]) {
     case 50:
       omk->verbose = atoi(optarg);
       break;
+    case 60:
+      strncpy(omk->prefix, optarg, BUFSIZ);
+      break;
+    case 70:
+      omk->install_dir = strndup(optarg, PATH_MAX);
+      break;
     case 99:
-      print_help();
+      print_help(argv[0]);
       exit(EXIT_SUCCESS);
     default:
-      print_help();
+      print_help(argv[0]);
       exit(EXIT_FAILURE);
       break;
     }
@@ -95,51 +107,66 @@ struct omk *omk_init(int argc, char *argv[]) {
   return omk;
 }
 
-void omk_bench(const char *filename, struct omk *omk) {
-  FILE *fp = fopen(filename, "w+");
+void omk_free_(void **p) { free(*p), *p = NULL; }
+
+unsigned omk_inc(const struct omk *omk, const unsigned i) {
+  if (i < omk->threshold)
+    return i + omk->am_inc;
+  else
+    return (unsigned)(omk->gm_inc * i);
+}
+
+double *omk_create_rand_vec(const unsigned size) {
+  double *x = omk_calloc(double, size);
+  for (unsigned i = 0; i < size; i++)
+    x[i] = (rand() + 1.0) / RAND_MAX;
+  return x;
+}
+
+FILE *omk_open_file(const struct omk *omk, const char *suffix) {
+  char fname[2 * BUFSIZ];
+  strncpy(fname, omk->prefix, BUFSIZ);
+  strncat(fname, "_", 2);
+  strncat(fname, suffix, BUFSIZ);
+  strncat(fname, ".txt", 5);
+
+  FILE *fp = fopen(fname, "w+");
   if (!fp)
-    errx(EXIT_FAILURE, "Unable to open file: \"%s\" for writing.\n", filename);
+    errx(EXIT_FAILURE, "Unable to open file: \"%s\" for writing.\n", fname);
+  return fp;
+}
 
-  double *a = omk_calloc(double, omk->end);
-  for (unsigned i = 0; i < omk->end; i++)
-    a[i] = (i + 1.0) / (i + 2.0);
-
-  unsigned trials = omk->trials;
-  for (unsigned i = omk->start; i < omk->end;) {
-    // Allocate memory on the device.
-    occa::memory o_a = omk->device.malloc<double>(i);
-
-    // Warmup.
-    for (unsigned j = 0; j < trials; j++)
-      o_a.copyFrom(a);
-    clock_t st = clock();
-    for (unsigned j = 0; j < trials; j++)
-      o_a.copyFrom(a);
-    clock_t et = clock();
-    double h2d = (double)(et - st) / (trials * CLOCKS_PER_SEC);
-
-    // Time the data copy.
-    for (unsigned j = 0; j < trials; j++)
-      o_a.copyTo(a);
-    st = clock();
-    for (unsigned j = 0; j < trials; j++)
-      o_a.copyTo(a);
-    et = clock();
-    double d2h = (double)(et - st) / (trials * CLOCKS_PER_SEC);
-
-    fprintf(fp, "%d,%e,%e\n", i, h2d, d2h);
-    o_a.free();
-    if (i < omk->threshold)
-      i += omk->am_inc;
+occa::kernel omk_build_knl(struct omk *omk, const char *name,
+                           occa::json &props) {
+  if (!omk->install_dir) {
+    char *tmp = NULL;
+    if ((tmp = getenv("OMK_INSTALL_DIR")))
+      omk->install_dir = strndup(tmp, PATH_MAX);
     else
-      i = (unsigned)(omk->gm_inc * i);
+      errx(EXIT_FAILURE, "Unable to find omk install directory.\n");
   }
-  fclose(fp);
 
-  omk_free(&a);
+  char *okl = omk_calloc(char, PATH_MAX + BUFSIZ);
+  strncpy(okl, omk->install_dir, PATH_MAX);
+  strncat(okl, "/okl/kernels.okl", BUFSIZ);
+
+  occa::kernel knl = omk->device.buildKernel(okl, name, props);
+
+  omk_free(&okl);
+
+  return knl;
+}
+
+void omk_bench(struct omk *omk) {
+  omk_bench_h2d_d2h(omk);
+  omk_bench_reduction(omk);
 }
 
 void omk_finalize(struct omk **omk) {
-  delete *omk;
+  struct omk *omk_ = *omk;
+  if (omk_)
+    omk_free(&omk_->install_dir);
+
+  delete omk_;
   *omk = nullptr;
 }

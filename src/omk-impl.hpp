@@ -15,24 +15,37 @@ extern "C" {
 struct omk {
   // occa device and json object to store configurations.
   occa::device device;
-  occa::json props;
   // User input parameters.
-  int start, threshold, end, am_inc, trials, verbose;
+  unsigned start;
+  unsigned threshold;
+  unsigned end;
+  unsigned am_inc;
+  unsigned trials;
+  unsigned verbose;
   double gm_inc;
+  char prefix[BUFSIZ + 1];
+  // OMK meta data.
+  char *install_dir;
 };
+
+void omk_free_(void **p);
+unsigned omk_inc(const struct omk *omk, const unsigned i);
+double *omk_create_rand_vec(const unsigned size);
+FILE *omk_open_file(const struct omk *omk, const char *suffix);
+occa::kernel omk_build_knl(struct omk *omk, const char *name,
+                           occa::json &props);
+
+void omk_bench_h2d_d2h(struct omk *omk);
+void omk_bench_reduction(struct omk *omk);
 
 // Host memory allocation function.
 #define omk_calloc(T, n) (T *)calloc(n, sizeof(T))
 
 // Host memory free function.
-static inline int omk_free_(void **p) {
-  free(*p), *p = NULL;
-  return 0;
-}
-
-#define omk_free(p) omk_free_((void **)p);
+#define omk_free(p) omk_free_((void **)p)
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif // __OMEM_IMPL_HPP__

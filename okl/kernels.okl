@@ -1,0 +1,49 @@
+@kernel void sum(const int n, const double *vec, double *sum) {
+  for (int b = 0; b < (n + BLOCKSIZE - 1) / BLOCKSIZE; b++; @outer) {
+    @shared double s_vec[BLOCKSIZE];
+
+    for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+      if (b * BLOCKSIZE + t < n)
+        s_vec[t] = vec[b * BLOCKSIZE + t];
+      else
+        s_vec[t] = 0;
+    }
+
+    for (int active = (BLOCKSIZE + 1) / 2; active > 0; active /= 2) {
+      for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+        if (t < active)
+          s_vec[t] = s_vec[t] + s_vec[t + active];
+      }
+    }
+
+    for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+      if (t == 0)
+        sum[b] = s_vec[0];
+    }
+  }
+}
+
+@kernel void dot(const int n, const double *x, const double *y, double *dot) {
+  for (int b = 0; b < (n + BLOCKSIZE - 1) / BLOCKSIZE; b++; @outer) {
+    @shared double s_xy[BLOCKSIZE];
+
+    for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+      if (b * BLOCKSIZE + t < n)
+        s_xy[t] = x[b * BLOCKSIZE + t] * y[b * BLOCKSIZE + t];
+      else
+        s_xy[t] = 0;
+    }
+
+    for (int active = (BLOCKSIZE + 1) / 2; active > 0; active /= 2) {
+      for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+        if (t < active)
+          s_xy[t] = s_xy[t] + s_xy[t + active];
+      }
+    }
+
+    for (int t = 0; t < BLOCKSIZE; t++; @inner) {
+      if (t == 0)
+        dot[b] = s_xy[0];
+    }
+  }
+}
