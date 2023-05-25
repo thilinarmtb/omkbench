@@ -58,7 +58,7 @@ romio_cb_write=enable:romio_ds_write=disable:romio_no_indep_rw=true"
 SFILE=s.bin
 echo "#!/bin/bash" > $SFILE
 echo "#SBATCH -A $PROJ_ID" >>$SFILE
-echo "#SBATCH -J omem" >>$SFILE
+echo "#SBATCH -J omk" >>$SFILE
 echo "#SBATCH -o %x-%j.out" >>$SFILE
 echo "#SBATCH -t $time" >>$SFILE
 echo "#SBATCH -N $nodes" >>$SFILE

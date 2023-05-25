@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(omem VERSION 0.0.1 DESCRIPTION "OCCA based linear solver" LANGUAGES C CXX)
+project(omk VERSION 0.0.1 DESCRIPTION "OCCA based linear solver" LANGUAGES C CXX)
 
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -13,20 +13,20 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(3rd_party/occa.cmake)
 
-set(SOURCES src/omem.cpp)
+set(SOURCES src/omk.cpp)
 
-add_library(omem SHARED ${SOURCES})
-set_target_properties(omem PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1
-  PUBLIC_HEADER src/omem.hpp)
-target_link_libraries(omem PRIVATE libocca)
-target_include_directories(omem PRIVATE src)
-target_compile_options(omem PRIVATE
+add_library(omk SHARED ${SOURCES})
+set_target_properties(omk PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1
+  PUBLIC_HEADER src/omk.hpp)
+target_link_libraries(omk PRIVATE libocca)
+target_include_directories(omk PRIVATE src)
+target_compile_options(omk PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
   $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>)
 
 add_executable(driver bin/driver.cpp)
 set_target_properties(driver PROPERTIES VERSION ${PROJECT_VERSION})
-target_link_libraries(driver PRIVATE omem)
+target_link_libraries(driver PRIVATE omk)
 target_include_directories(driver PRIVATE src)
 target_compile_options(driver PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
@@ -40,6 +40,6 @@ if (CLANG_FORMAT)
     COMMENT "Running clang-format ...")
 endif()
 
-install(TARGETS omem driver RUNTIME DESTINATION bin LIBRARY DESTINATION lib
+install(TARGETS omk driver RUNTIME DESTINATION bin LIBRARY DESTINATION lib
   PUBLIC_HEADER DESTINATION include
 )

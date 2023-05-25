@@ -1,9 +1,9 @@
-#include "omem.hpp"
+#include "omk.hpp"
 
 int main(int argc, char **argv) {
-  struct omem *omem = omem_init(argc, argv);
-  omem_bench("memcpy.txt", omem);
-  omem_finalize(&omem);
+  struct omk *omk = omk_init(argc, argv);
+  omk_bench("memcpy.txt", omk);
+  omk_finalize(&omk);
 
   return 0;
 }
