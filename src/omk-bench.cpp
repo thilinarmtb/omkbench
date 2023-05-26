@@ -10,7 +10,7 @@ void omk_bench_reduction(struct omk *omk) {
     props["defines/BLOCKSIZE"] = bsize;
     occa::kernel o_knl = omk_build_knl(omk, "sum", props);
 
-    for (unsigned i = omk->start; i < omk->end;) {
+    for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
       occa::memory o_x = omk->device.malloc<double>(i);
       unsigned nblks = (i + bsize - 1) / bsize;
       occa::memory o_blk = omk->device.malloc<double>(nblks);
@@ -34,8 +34,8 @@ void omk_bench_reduction(struct omk *omk) {
       clock_t et = clock();
       double t_sum = (double)(et - st) / (omk->trials * CLOCKS_PER_SEC);
 
-      fprintf(fp, "%u,%s,%u,%e\n", i, "sum", bsize, t_sum);
-      o_x.free(), o_blk.free(), i = omk_inc(omk, i);
+      fprintf(fp, "%s,%u,%u,%e\n", "sum", bsize, i, t_sum);
+      o_x.free(), o_blk.free();
     }
     o_knl.free();
   }
@@ -47,7 +47,7 @@ void omk_bench_h2d_d2h(struct omk *omk) {
   FILE *fp = omk_open_file(omk, "h2d_d2h");
   double *vec = omk_create_rand_vec(omk->end);
 
-  for (unsigned i = omk->start; i < omk->end;) {
+  for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
     // Allocate memory on the device.
     occa::memory o_vec = omk->device.malloc<double>(i);
 
@@ -72,7 +72,7 @@ void omk_bench_h2d_d2h(struct omk *omk) {
     double t_d2h = (double)(et - st) / (omk->trials * CLOCKS_PER_SEC);
 
     fprintf(fp, "%u,%e,%e\n", i, t_h2d, t_d2h);
-    o_vec.free(), i = omk_inc(omk, i);
+    o_vec.free();
   }
 
   omk_free(&vec), fclose(fp);
