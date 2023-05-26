@@ -43,9 +43,12 @@ void omk_bench_reduction(struct omk *omk) {
   omk_free(&x), omk_free(&blk), fclose(fp);
 }
 
-void omk_bench_h2d_d2h(struct omk *omk) {
-  FILE *fp = omk_open_file(omk, "h2d_d2h");
+void omk_bench_h2d_d2h_d2d(struct omk *omk) {
+  FILE *fp = omk_open_file(omk, "h2d_d2h_d2d");
   double *vec = omk_create_rand_vec(omk->end);
+
+  occa::json props({{"defines/BLOCKSIZE", 256}});
+  occa::kernel o_knl = omk_build_knl(omk, "d2d", props);
 
   for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
     // Allocate memory on the device.
@@ -71,9 +74,20 @@ void omk_bench_h2d_d2h(struct omk *omk) {
     et = clock();
     double t_d2h = (double)(et - st) / (omk->trials * CLOCKS_PER_SEC);
 
-    fprintf(fp, "%u,%e,%e\n", i, t_h2d, t_d2h);
-    o_vec.free();
+    occa::memory o_dst = omk->device.malloc<double>(i);
+    // Warmup.
+    for (unsigned j = 0; j < omk->trials; j++)
+      o_knl(i, o_vec, o_dst);
+    // Time d2d.
+    occa::streamTag o_st = omk->device.tagStream();
+    for (unsigned j = 0; j < omk->trials; j++)
+      o_knl(i, o_vec, o_dst);
+    occa::streamTag o_et = omk->device.tagStream();
+    double t_d2d = (double)omk->device.timeBetween(o_st, o_et) / omk->trials;
+
+    fprintf(fp, "%u,%e,%e,%e\n", i, t_h2d, t_d2h, t_d2d);
+    o_vec.free(), o_dst.free();
   }
 
-  omk_free(&vec), fclose(fp);
+  o_knl.free(), omk_free(&vec), fclose(fp);
 }

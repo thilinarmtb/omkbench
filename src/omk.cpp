@@ -158,7 +158,7 @@ occa::kernel omk_build_knl(struct omk *omk, const char *name,
 }
 
 void omk_bench(struct omk *omk) {
-  omk_bench_h2d_d2h(omk);
+  omk_bench_h2d_d2h_d2d(omk);
   omk_bench_reduction(omk);
 }
 

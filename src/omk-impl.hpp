@@ -35,7 +35,7 @@ FILE *omk_open_file(const struct omk *omk, const char *suffix);
 occa::kernel omk_build_knl(struct omk *omk, const char *name,
                            occa::json &props);
 
-void omk_bench_h2d_d2h(struct omk *omk);
+void omk_bench_h2d_d2h_d2d(struct omk *omk);
 void omk_bench_reduction(struct omk *omk);
 
 // Host memory allocation function.

@@ -3,6 +3,7 @@
 : ${PROJ_ID:="CSC262"}
 : ${OMK_INSTALL_DIR:=./install}
 : ${QUEUE:="batch"}
+: ${OCCA_VERBOSE:=1}
 
 if [ $# -ne 3 ]; then
   echo "Usage: [PROJ_ID=value] $0 <backend> <# compute nodes> <hh:mm:ss>"
