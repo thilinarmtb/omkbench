@@ -1,6 +1,50 @@
 #include "omk-impl.hpp"
 
-void omk_bench_reduction(struct omk *omk) {
+void omk_bench_dot_reduction(struct omk *omk) {
+  FILE *fp = omk_open_file(omk, "reduction");
+  double *x = omk_create_rand_vec(omk->end);
+  double *blk = omk_calloc(double, (omk->end + 31) / 32);
+  occa::json props;
+
+  for (unsigned bsize = 32; bsize <= 512; bsize *= 2) {
+    props["defines/BLOCKSIZE"] = bsize;
+    occa::kernel o_knl = omk_build_knl(omk, "dot", props);
+
+    for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
+      occa::memory o_x = omk->device.malloc<double>(i);
+      occa::memory o_y = omk->device.malloc<double>(i);
+      unsigned nblks = (i + bsize - 1) / bsize;
+      occa::memory o_blk = omk->device.malloc<double>(nblks);
+
+      // Warmup.
+      for (unsigned i = 0; i < omk->trials; i++) {
+        o_knl(i, o_x, o_y, o_blk);
+        o_blk.copyTo(blk);
+        for (unsigned j = 1; j < nblks; j++)
+          blk[0] += blk[j];
+      }
+
+      // Time the reduction.
+      clock_t st = clock();
+      for (unsigned i = 0; i < omk->trials; i++) {
+        o_knl(i, o_x, o_y, o_blk);
+        o_blk.copyTo(blk);
+        for (unsigned j = 1; j < nblks; j++)
+          blk[0] += blk[j];
+      }
+      clock_t et = clock();
+      double t_sum = (double)(et - st) / (omk->trials * CLOCKS_PER_SEC);
+
+      fprintf(fp, "%s,%u,%u,%e\n", "sum", bsize, i, t_sum);
+      o_x.free(), o_y.free(), o_blk.free();
+    }
+    o_knl.free();
+  }
+
+  omk_free(&x), omk_free(&blk), fclose(fp);
+}
+
+void omk_bench_sum_reduction(struct omk *omk) {
   FILE *fp = omk_open_file(omk, "reduction");
   double *x = omk_create_rand_vec(omk->end);
   double *blk = omk_calloc(double, (omk->end + 31) / 32);

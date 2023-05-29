@@ -130,7 +130,7 @@ FILE *omk_open_file(const struct omk *omk, const char *suffix) {
   strncat(fname, suffix, BUFSIZ);
   strncat(fname, ".txt", 5);
 
-  FILE *fp = fopen(fname, "w+");
+  FILE *fp = fopen(fname, "a");
   if (!fp)
     errx(EXIT_FAILURE, "Unable to open file: \"%s\" for writing.\n", fname);
   return fp;
@@ -159,7 +159,8 @@ occa::kernel omk_build_knl(struct omk *omk, const char *name,
 
 void omk_bench(struct omk *omk) {
   omk_bench_h2d_d2h_d2d(omk);
-  omk_bench_reduction(omk);
+  omk_bench_sum_reduction(omk);
+  omk_bench_dot_reduction(omk);
 }
 
 void omk_finalize(struct omk **omk) {
