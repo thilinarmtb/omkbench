@@ -116,11 +116,22 @@ unsigned omk_inc(const struct omk *omk, const unsigned i) {
     return (unsigned)(omk->gm_inc * i);
 }
 
-double *omk_create_rand_vec(const unsigned size) {
+double *omk_create_host_vec(const unsigned size) {
   double *x = omk_calloc(double, size);
   for (unsigned i = 0; i < size; i++)
     x[i] = (rand() + 1.0) / RAND_MAX;
   return x;
+}
+
+occa::memory omk_create_device_vec(struct omk *omk, const unsigned size) {
+  double *x = omk_create_host_vec(size);
+
+  occa::memory o_x = omk->device.malloc<double>(size);
+  o_x.copyFrom(x);
+
+  omk_free(&x);
+
+  return o_x;
 }
 
 FILE *omk_open_file(const struct omk *omk, const char *suffix) {

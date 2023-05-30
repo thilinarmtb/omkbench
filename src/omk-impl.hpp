@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 struct omk {
-  // occa device and json object to store configurations.
+  // occa device object.
   occa::device device;
   // User input parameters.
   unsigned start;
@@ -29,19 +29,26 @@ struct omk {
 };
 
 unsigned omk_inc(const struct omk *omk, const unsigned i);
-double *omk_create_rand_vec(const unsigned size);
+
 FILE *omk_open_file(const struct omk *omk, const char *suffix);
+
+double *omk_create_host_vec(const unsigned size);
+
+occa::memory omk_create_device_vec(struct omk *omk, const unsigned size);
+
 occa::kernel omk_build_knl(struct omk *omk, const char *name,
                            occa::json &props);
 
 void omk_bench_h2d_d2h_d2d(struct omk *omk);
-void omk_bench_sum_reduction(struct omk *omk);
-void omk_bench_dot_reduction(struct omk *omk);
 
-void omk_free_(void **p);
+void omk_bench_sum_reduction(struct omk *omk);
+
+void omk_bench_dot_reduction(struct omk *omk);
 
 // Host memory allocation function.
 #define omk_calloc(T, n) (T *)calloc(n, sizeof(T))
+
+void omk_free_(void **p);
 
 // Host memory free function.
 #define omk_free(p) omk_free_((void **)p)
