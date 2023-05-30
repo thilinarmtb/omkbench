@@ -1,7 +1,6 @@
 #include "omk-impl.hpp"
 #include <err.h>
 #include <getopt.h>
-#include <linux/limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -41,9 +40,9 @@ struct omk *omk_init(int argc, char *argv[]) {
   struct omk *omk = new struct omk();
   omk->start = 1, omk->threshold = 1000, omk->end = 1e6;
   omk->am_inc = 1, omk->gm_inc = 1.03;
-  strncpy(omk->prefix, "omk", 8);
   omk->trials = 500, omk->verbose = 0;
-  omk->install_dir = NULL;
+  strncpy(omk->prefix, "omk", 8);
+  strncpy(omk->install_dir, "", 2);
 
   // Parse the command line arguments.
   char *backend = NULL;
@@ -85,7 +84,7 @@ struct omk *omk_init(int argc, char *argv[]) {
       strncpy(omk->prefix, optarg, BUFSIZ);
       break;
     case 70:
-      omk->install_dir = strndup(optarg, PATH_MAX);
+      strncpy(omk->install_dir, optarg, PATH_MAX);
       break;
     case 99:
       print_help(argv[0]);
@@ -149,10 +148,10 @@ FILE *omk_open_file(const struct omk *omk, const char *suffix) {
 
 occa::kernel omk_build_knl(struct omk *omk, const char *name,
                            occa::json &props) {
-  if (!omk->install_dir) {
+  if (strnlen(omk->install_dir, PATH_MAX) == 0) {
     char *tmp = NULL;
     if ((tmp = getenv("OMK_INSTALL_DIR")))
-      omk->install_dir = strndup(tmp, PATH_MAX);
+      strncpy(omk->install_dir, tmp, PATH_MAX);
     else
       errx(EXIT_FAILURE, "Unable to find omk install directory.\n");
   }
@@ -178,9 +177,6 @@ void omk_bench(struct omk *omk) {
 
 void omk_finalize(struct omk **omk) {
   struct omk *omk_ = *omk;
-  if (omk_)
-    omk_free(&omk_->install_dir);
-
   delete omk_;
   *omk = nullptr;
 }

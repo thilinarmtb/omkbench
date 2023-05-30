@@ -4,6 +4,7 @@
 #include "omk.hpp"
 #include <assert.h>
 #include <err.h>
+#include <linux/limits.h>
 #include <occa.hpp>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,17 +16,16 @@ extern "C" {
 struct omk {
   // occa device object.
   occa::device device;
-  // User input parameters.
-  unsigned start;
-  unsigned threshold;
-  unsigned end;
+  // User input parameters for input space for benchmarking.
+  unsigned start, threshold, end, trials;
   unsigned am_inc;
-  unsigned trials;
-  unsigned verbose;
   double gm_inc;
+  // Prefix for the result file name.
   char prefix[BUFSIZ + 1];
-  // OMK meta data.
-  char *install_dir;
+  // OMK install dir.
+  char install_dir[PATH_MAX + 1];
+  // Verbose level.
+  unsigned verbose;
 };
 
 unsigned omk_inc(const struct omk *omk, const unsigned i);
