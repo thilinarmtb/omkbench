@@ -167,12 +167,16 @@ occa::kernel omk_build_knl(struct omk *omk, const char *name,
   return knl;
 }
 
+double omk_time_between(struct omk *omk, occa::streamTag &st,
+                        occa::streamTag &et) {
+  return (double)omk->device.timeBetween(st, et);
+}
+
 void omk_bench(struct omk *omk) {
   omk_bench_h2d_d2h(omk);
   omk_bench_d2d(omk);
-  omk_bench_sum_reduction(omk);
-  omk_bench_dot_reduction(omk);
-  omk_bench_glsc3_reduction(omk);
+  omk_bench_daxpy(omk);
+  omk_bench_reduction(omk);
 }
 
 void omk_finalize(struct omk **omk) {
