@@ -39,11 +39,15 @@ occa::memory omk_create_device_vec(struct omk *omk, const unsigned size);
 occa::kernel omk_build_knl(struct omk *omk, const char *name,
                            occa::json &props);
 
-void omk_bench_h2d_d2h_d2d(struct omk *omk);
+void omk_bench_h2d_d2h(struct omk *omk);
+
+void omk_bench_d2d(struct omk *omk);
 
 void omk_bench_sum_reduction(struct omk *omk);
 
 void omk_bench_dot_reduction(struct omk *omk);
+
+void omk_bench_glsc3_reduction(struct omk *omk);
 
 // Host memory allocation function.
 #define omk_calloc(T, n) (T *)calloc(n, sizeof(T))
