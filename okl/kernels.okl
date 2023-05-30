@@ -87,14 +87,14 @@
 
 @kernel void add2s1(const int n, const double *r, const double beta,
                     double *p) {
-  for (int i = 0; i < n; i++; @tile(BLOKSIZE, @outer, @inner)) {
+  for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
     p[i] = beta * p[i] + r[i];
   }
 }
 
 @kernel void add2s2(const int n, const double *r, const double alpha,
                     double *p) {
-  for (int i = 0; i < n; i++; @tile(BLOKSIZE, @outer, @inner)) {
+  for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
     p[i] = p[i] + alpha * r[i];
   }
 }

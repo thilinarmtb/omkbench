@@ -17,7 +17,7 @@ void omk_bench_reduction(struct omk *omk) {
       occa::memory o_z = omk_create_device_vec(omk, i);
       occa::memory o_blk = omk_create_device_vec(omk, nblks);
 
-      // Warmup glsc3.
+      // Warmup.
       for (unsigned t = 0; t < omk->trials; t++) {
         sum(i, o_x, o_blk);
         dot(i, o_x, o_y, o_blk);
@@ -163,7 +163,6 @@ void omk_bench_h2d_d2h(struct omk *omk) {
     for (unsigned j = 0; j < omk->trials; j++)
       o_x.copyTo(x);
     et = clock();
-
     double t_d2h = (double)(et - st) / (omk->trials * CLOCKS_PER_SEC);
 
     fprintf(fp, "%u,%e,%e\n", i, t_h2d, t_d2h);
