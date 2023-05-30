@@ -1,5 +1,5 @@
-#if !defined(__OMEM_IMPL_HPP__)
-#define __OMEM_IMPL_HPP__
+#if !defined(__OMK_IMPL_HPP__)
+#define __OMK_IMPL_HPP__
 
 #include "omk.hpp"
 #include <assert.h>
@@ -50,4 +50,4 @@ void omk_free_(void **p);
 }
 #endif
 
-#endif // __OMEM_IMPL_HPP__
+#endif // __OMK_IMPL_HPP__

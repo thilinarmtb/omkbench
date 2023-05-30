@@ -1,5 +1,5 @@
-#if !defined(__OMEM_HPP__)
-#define __OMEM_HPP__
+#if !defined(__OMK_HPP__)
+#define __OMK_HPP__
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,4 +13,4 @@ void omk_finalize(struct omk **omk);
 #ifdef __cplusplus
 }
 #endif
-#endif // __OMEM_HPP__
+#endif // __OMK_HPP__
