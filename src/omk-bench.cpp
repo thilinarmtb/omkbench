@@ -124,7 +124,7 @@ void omk_bench_d2d(struct omk *omk) {
       for (unsigned j = 0; j < omk->trials; j++)
         d2d(i, o_x, o_y);
       occa::streamTag et = omk->device.tagStream();
-      double t_d2d = omk_time_between(omk, st, et);
+      double t_d2d = omk_time_between(omk, st, et) / omk->trials;
 
       fprintf(fp, "%u,%u,%e\n", i, bsize, t_d2d);
       o_x.free(), o_y.free();
