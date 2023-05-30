@@ -49,6 +49,8 @@ void omk_bench_dot_reduction(struct omk *omk);
 
 void omk_bench_glsc3_reduction(struct omk *omk);
 
+void omk_bench_daxpy(struct omk *omk);
+
 // Host memory allocation function.
 #define omk_calloc(T, n) (T *)calloc(n, sizeof(T))
 

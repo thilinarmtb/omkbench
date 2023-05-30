@@ -1,5 +1,51 @@
 #include "omk-impl.hpp"
 
+void omk_bench_daxpy(struct omk *omk) {
+  FILE *fp = omk_open_file(omk, "daxpy");
+  occa::json props;
+  double alpha = 1.0;
+
+  for (unsigned bsize = 32; bsize <= 512; bsize *= 2) {
+    props["defines/BLOCKSIZE"] = bsize;
+    occa::kernel o_add2s1 = omk_build_knl(omk, "add2s1", props);
+    occa::kernel o_add2s2 = omk_build_knl(omk, "add2s2", props);
+
+    for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
+      occa::memory o_x = omk_create_device_vec(omk, i);
+      occa::memory o_y = omk_create_device_vec(omk, i);
+
+      // Warmup.
+      for (unsigned i = 0; i < omk->trials; i++) {
+        o_add2s1(i, o_x, alpha, o_y);
+        o_add2s2(i, o_x, alpha, o_y);
+      }
+
+      // Time add2s1
+      occa::streamTag o_st = omk->device.tagStream();
+      for (unsigned i = 0; i < omk->trials; i++)
+        o_add2s1(i, o_x, alpha, o_y);
+      occa::streamTag o_et = omk->device.tagStream();
+      double t_add2s1 =
+          (double)omk->device.timeBetween(o_st, o_et) / omk->trials;
+
+      // Time add2s2
+      o_st = omk->device.tagStream();
+      for (unsigned i = 0; i < omk->trials; i++)
+        o_add2s2(i, o_x, alpha, o_y);
+      o_et = omk->device.tagStream();
+      double t_add2s2 =
+          (double)omk->device.timeBetween(o_st, o_et) / omk->trials;
+
+      fprintf(fp, "%s,%u,%u,%e\n", "add2s1", bsize, i, t_add2s1);
+      fprintf(fp, "%s,%u,%u,%e\n", "add2s2", bsize, i, t_add2s2);
+      o_x.free(), o_y.free();
+    }
+    o_add2s1.free(), o_add2s2.free();
+  }
+
+  fclose(fp);
+}
+
 void omk_bench_glsc3_reduction(struct omk *omk) {
   FILE *fp = omk_open_file(omk, "reduction");
   double *x = omk_create_host_vec(omk->end);

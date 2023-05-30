@@ -156,8 +156,8 @@ occa::kernel omk_build_knl(struct omk *omk, const char *name,
       errx(EXIT_FAILURE, "Unable to find omk install directory.\n");
   }
 
-  char *okl = omk_calloc(char, PATH_MAX + BUFSIZ);
-  strncpy(okl, omk->install_dir, PATH_MAX);
+  char *okl = omk_calloc(char, PATH_MAX + 2 * BUFSIZ);
+  strncpy(okl, omk->install_dir, PATH_MAX + 1);
   strncat(okl, "/okl/kernels.okl", BUFSIZ);
 
   occa::kernel knl = omk->device.buildKernel(okl, name, props);
