@@ -39,6 +39,7 @@ void omk_bench_scalar_mul_div(struct omk *omk) {
       fprintf(fp, "%s,%u,%u,%e\n", "mul", bsize, i, t_mul);
       o_x.free(), o_y.free();
     }
+    mul.free(), div.free();
   }
 }
 
@@ -111,32 +112,33 @@ void omk_bench_daxpy(struct omk *omk) {
     for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
       occa::memory o_x = omk_create_device_vec(omk, i);
       occa::memory o_y = omk_create_device_vec(omk, i);
+      occa::memory o_z = omk_create_device_vec(omk, i);
 
       double alpha = 1.0;
 
       // Warmup.
       for (unsigned t = 0; t < omk->trials; t++) {
-        add2s1(i, o_x, alpha, o_y);
-        add2s2(i, o_x, alpha, o_y);
+        add2s1(i, o_x, alpha, o_y, o_z);
+        add2s2(i, o_x, alpha, o_y, o_z);
       }
 
       // Time add2s1.
       occa::streamTag st = omk->device.tagStream();
       for (unsigned t = 0; t < omk->trials; t++)
-        add2s1(i, o_x, alpha, o_y);
+        add2s1(i, o_x, alpha, o_y, o_z);
       occa::streamTag et = omk->device.tagStream();
       double t_add2s1 = omk_time_between(omk, st, et) / omk->trials;
 
       // Time add2s2.
       st = omk->device.tagStream();
       for (unsigned t = 0; t < omk->trials; t++)
-        add2s2(i, o_x, alpha, o_y);
+        add2s2(i, o_x, alpha, o_y, o_z);
       et = omk->device.tagStream();
       double t_add2s2 = omk_time_between(omk, st, et) / omk->trials;
 
       fprintf(fp, "%s,%u,%u,%e\n", "add2s1", bsize, i, t_add2s1);
       fprintf(fp, "%s,%u,%u,%e\n", "add2s2", bsize, i, t_add2s2);
-      o_x.free(), o_y.free();
+      o_x.free(), o_y.free(), o_z.free();
     }
     add2s1.free(), add2s2.free();
   }
