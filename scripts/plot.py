@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/python3
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -110,16 +110,51 @@ def plot_ratio(A: np.array) -> None:
     plt.close()
 
 
+def plot_roofline(
+    kernel: str, A: np.array, n_input_vec: int, w_r_ratio: float, D: np.array
+) -> None:
+    kernels = np.unique(A[:, 0])
+    assert len(kernels) == 1
+
+    fig = plt.figure(figsize=(9, 9))
+
+    bsize = 512
+    A1 = A[A[:, 1].astype(int) == bsize]
+    D1 = D[D[:, 0].astype(int) == bsize]
+
+    words = A1[:, 2].astype(int)
+    t_knl = A1[:, 3].astype(float)
+    t_d2d = D1[:, 2].astype(float)
+    plt.plot(
+        words * n_input_vec,
+        np.divide(words * n_input_vec * 8 * 1e-9, t_knl / (1 + w_r_ratio)),
+        label=f"{kernel}",
+    )
+    plt.plot(words, np.divide(words * 8 * 1e-9, t_d2d / 2.0), label=f"roofline")
+
+    plt.title(f"Roofiline for: {kernel}, Blocksize = {bsize}", fontsize=23)
+    plt.xlabel("# of 8-byte Words", fontsize=18)
+    plt.ylabel("GB/sec", fontsize=18)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(loc=0)
+    plt.savefig(f"roofline_{kernel}.pdf")
+    plt.close()
+
+
 if __name__ == "__main__":
     A = read("data/frontier/omk_h2d_d2h.txt")
     B = read("data/frontier/omk_d2d.txt")
-    C = read("data/frontier/omk_daxpy.txt")
-    D = read("data/frontier/omk_reduction.txt")
-    E = read("data/frontier/omk_scalar_mul_div.txt")
 
-    plot_h2d_d2h(A)
-    plot_d2d(B)
-    plot_variants(C, "Daxpy")
-    plot_variants(D, "Reduction")
-    plot_variants(E, "Scale")
-    plot_ratio(E)
+    C = read("data/frontier/omk_daxpy.txt")
+    plot_roofline("add2s1", C[C[:, 0] == "add2s1"], 2, 0.5, B)
+    plot_roofline("add2s2", C[C[:, 0] == "add2s2"], 2, 0.5, B)
+
+    D = read("data/frontier/omk_reduction.txt")
+    plot_roofline("sum", D[D[:, 0] == "sum"], 1, 0, B)
+    plot_roofline("dot", D[D[:, 0] == "dot"], 2, 0, B)
+    plot_roofline("glsc3", D[D[:, 0] == "glsc3"], 3, 0, B)
+
+    E = read("data/frontier/omk_scalar_mul_div.txt")
+    plot_roofline("div", E[E[:, 0] == "div"], 1, 1, B)
+    plot_roofline("mul", E[E[:, 0] == "mul"], 1, 1, B)
