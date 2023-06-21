@@ -1,5 +1,47 @@
 #include "omk-impl.hpp"
 
+void omk_bench_scalar_mul_div(struct omk *omk) {
+  FILE *fp = omk_open_file(omk, "scalar_mul_div");
+  occa::json props;
+
+  for (unsigned bsize = 32; bsize <= 512; bsize *= 2) {
+    props["defines/BLOCKSIZE"] = bsize;
+    occa::kernel mul = omk_build_knl(omk, "scalar_mul", props);
+    occa::kernel div = omk_build_knl(omk, "scalar_div", props);
+
+    for (unsigned i = omk->start; i < omk->end; i = omk_inc(omk, i)) {
+      unsigned nblks = (i + bsize - 1) / bsize;
+      occa::memory o_x = omk_create_device_vec(omk, i);
+      occa::memory o_y = omk_create_device_vec(omk, i);
+
+      // Warmup.
+      double scalar = (rand() + 1) / RAND_MAX;
+      for (unsigned t = 0; t < omk->trials; t++) {
+        mul(i, o_x, scalar, o_y);
+        div(i, o_x, scalar, o_y);
+      }
+
+      // Time mul.
+      occa::streamTag st = omk->device.tagStream();
+      for (unsigned t = 0; t < omk->trials; t++)
+        mul(i, o_x, scalar, o_y);
+      occa::streamTag et = omk->device.tagStream();
+      double t_mul = omk_time_between(omk, st, et) / omk->trials;
+
+      // Time div.
+      st = omk->device.tagStream();
+      for (unsigned t = 0; t < omk->trials; t++)
+        div(i, o_x, scalar, o_y);
+      et = omk->device.tagStream();
+      double t_div = omk_time_between(omk, st, et) / omk->trials;
+
+      fprintf(fp, "%s,%u,%u,%e\n", "div", bsize, i, t_div);
+      fprintf(fp, "%s,%u,%u,%e\n", "mul", bsize, i, t_mul);
+      o_x.free(), o_y.free();
+    }
+  }
+}
+
 void omk_bench_reduction(struct omk *omk) {
   FILE *fp = omk_open_file(omk, "reduction");
   occa::json props;

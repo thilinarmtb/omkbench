@@ -8,6 +8,19 @@
   }
 }
 
+@kernel void add2s1(const int n, const double *r, const double beta,
+                    double *p) {
+  for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
+    p[i] = beta * p[i] + r[i];
+  }
+}
+
+@kernel void add2s2(const int n, const double *r, const double alpha,
+                    double *p) {
+  for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
+    p[i] = p[i] + alpha * r[i];
+  }
+}
 @kernel void sum(const int n, const double *vec, double *wrk) {
   for (int b = 0; b < (n + BLOCKSIZE - 1) / BLOCKSIZE; b++; @outer) {
     @shared double s_vec[BLOCKSIZE];
@@ -85,16 +98,16 @@
   }
 }
 
-@kernel void add2s1(const int n, const double *r, const double beta,
-                    double *p) {
+@kernel void scalar_mul(const int n, const double *r, const double alpha,
+                        double *p) {
   for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
-    p[i] = beta * p[i] + r[i];
+    p[i] = alpha * r[i];
   }
 }
 
-@kernel void add2s2(const int n, const double *r, const double alpha,
-                    double *p) {
+@kernel void scalar_div(const int n, const double *r, const double beta,
+                        double *p) {
   for (int i = 0; i < n; i++; @tile(BLOCKSIZE, @outer, @inner)) {
-    p[i] = p[i] + alpha * r[i];
+    p[i] = r[i] / beta;
   }
 }

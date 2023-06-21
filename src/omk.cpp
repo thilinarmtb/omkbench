@@ -1,8 +1,8 @@
 #include "omk-impl.hpp"
 #include <err.h>
 #include <getopt.h>
-#include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 static void print_help(const char *name) {
   printf("Usage: %s [OPTIONS]\n", name);
@@ -18,6 +18,7 @@ static void print_help(const char *name) {
   printf("  --trials=<TRIALS>, Number of trials, Values: 1, 2, ...\n");
   printf("  --verbose=<VERBOSITY>, Values: 0, 1, 2, ...\n");
   printf("  --prefix=<PREFIX>, Prefix for the result files.\n");
+  printf("  --install_dir=<install_dir>, OMK install directory.\n");
   printf("  --help\n");
 }
 
@@ -36,6 +37,8 @@ struct omk *omk_init(int argc, char *argv[]) {
       {"install_dir", optional_argument, 0, 70},
       {"help", no_argument, 0, 99},
       {0, 0, 0, 0}};
+
+  srand(time(NULL));
 
   struct omk *omk = new struct omk();
   omk->start = 1, omk->threshold = 1000, omk->end = 1e6;
@@ -177,6 +180,7 @@ void omk_bench(struct omk *omk) {
   omk_bench_d2d(omk);
   omk_bench_daxpy(omk);
   omk_bench_reduction(omk);
+  omk_bench_scalar_mul_div(omk);
 }
 
 void omk_finalize(struct omk **omk) {

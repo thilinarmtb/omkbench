@@ -3,7 +3,6 @@
 
 #include "omk.hpp"
 #include <assert.h>
-#include <err.h>
 #include <linux/limits.h>
 #include <occa.hpp>
 #include <stdio.h>
@@ -46,9 +45,11 @@ void omk_bench_h2d_d2h(struct omk *omk);
 
 void omk_bench_d2d(struct omk *omk);
 
+void omk_bench_daxpy(struct omk *omk);
+
 void omk_bench_reduction(struct omk *omk);
 
-void omk_bench_daxpy(struct omk *omk);
+void omk_bench_scalar_mul_div(struct omk *omk);
 
 // Host memory allocation function.
 #define omk_calloc(T, n) (T *)calloc(n, sizeof(T))
