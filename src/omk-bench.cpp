@@ -41,6 +41,7 @@ void omk_bench_scalar_mul_div(struct omk *omk) {
     }
     mul.free(), div.free();
   }
+  fclose(fp);
 }
 
 void omk_bench_reduction(struct omk *omk) {
